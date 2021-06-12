@@ -5,25 +5,9 @@
  * Created: 12.06.2021 12:32:17
  *  Author: Kofle
  */ 
- #include <avr/io.h>
+ #include "scheduler_asm.h"
 
  .global scheduler_init
-
- .equ addr_maxProcesses, RAMEND
- .equ addr_curPID, RAMEND-1
- .equ addr_nextPID, RAMEND-2
- .equ addr_nextStack, RAMEND-4
- .equ addr_buf1, RAMEND-6
- .equ addr_buf2, RAMEND-8
- .equ addr_buf3, RAMEND-10
- .equ addr_jumpback, RAMEND-13
-
- //The start of the process informations
- .equ addr_procStart, RAMEND-14
- .equ size_proc, 0x2A				//42 bytes for every process
-
- //Some addresses for usage
- .equ addr_stackptr, 0x005D
 
  scheduler_init:
 	//	R24				max_processes
@@ -39,15 +23,49 @@
 	push r26
 	push r25
 
+	//Set all process-status to 0 -> not created
+	//R25 is counter
+	ldi r25, 0x00
+	//R26 is data = 0
+	ldi r26, 0x00
+	//Y holds the pointer
+	ldi r29, hi8(addr_procstatus)
+	ldi r28, lo8(addr_procstatus)
+	//Add 1 to the pointer for decrementing when writing
+	inc r28
+	adc r29, r26
+procstatus_loop:
+	st -Y, r26
+	inc r25
+	cp r25, r24
+	brne procstatus_loop
+
+	//Set this process (PID=0) status to 3 (running -> currently executing this process)
+	ldi r26, 0x03
+	sts addr_procstatus, r26
+
+	//Calculate start of process data (registers, PC, stackptr...)
+	ldi r31, hi8(addr_procstatus)
+	ldi r30, lo8(addr_procstatus)
+	ldi r29, 0x00
+	sub r30, r24
+	sbc r31, r29
+	sts addr_procdata, r30
+	sts addr_procdata+1, r31
+
 	//Calculate the start of the 1st stack
 	ldi r28, size_proc
 	mov r29, r24
 	mul r28, r29
-	ldi r26, lo8(addr_procStart)
-	ldi r27, hi8(addr_procStart)
+	lds r26, addr_procdata
+	lds r27, addr_procdata+1
 	sub r26, r0
 	sbc r27, r1
-	//Z now points to the 1st stack
+
+	//X now points to the 1st stack
+	//Store stacks start
+	sts addr_stacks+1, r27
+	sts addr_stacks, r26
 
 	//Load the current stack pointer into Y
 	lds r28, addr_stackptr
@@ -88,7 +106,7 @@ moveloop:
 	sub r26, r22
 	sbc r27, r23
 	sts addr_nextStack, r26
-	sts addr_nextStack, r27
+	sts addr_nextStack+1, r27
 
 	//Pop registers
 	pop 25

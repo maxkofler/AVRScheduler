@@ -171,13 +171,19 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="scheduler_newPID.s">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="scheduler.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.cpp">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="scheduler.s">
+    <Compile Include="scheduler_asm.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="scheduler_init.s">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>
