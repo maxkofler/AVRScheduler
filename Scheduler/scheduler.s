@@ -7,11 +7,7 @@
  */ 
  #include <avr/io.h>
 
- #include "scheduler.h"
-
  .global scheduler_init
-
- .global gaming
 
  .equ addr_maxProcesses, RAMEND
  .equ addr_curPID, RAMEND-1
