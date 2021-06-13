@@ -28,7 +28,7 @@
  .equ addr_procdata, addr_jumpback-2
  .equ addr_stacks, addr_procdata-2
  .equ addr_procstatus, addr_stacks-1
- .equ size_proc, 0x2B				//43 bytes for every process
+ .equ size_proc, 0x2C				//44 bytes for every process
 
  //Some addresses for usage
  .equ addr_stackptr, 0x005D

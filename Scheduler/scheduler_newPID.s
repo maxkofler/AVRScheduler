@@ -17,82 +17,90 @@
 	//R22	LOW		Stack size
 	//Ret			New pid
 
-	//Store R30, R31 in buf1, R29, R28 in buf2
-	sts addr_buf1+1, R31
-	sts addr_buf1, R30
-	sts addr_buf2+1, R29
-	sts addr_buf2, R28
+	//Move	R30, R31	->	buf4
+	//		R28, R29	->	buf3
+	//		R0, R1		->	buf2
+	//		SP			->	buf1
+	sts addr_buf4+1,	r31
+	sts addr_buf4,		r30
+	sts addr_buf3+1,	r29
+	sts addr_buf3,		r28
+	sts addr_buf2+1,	r1
+	sts addr_buf2,		r0
+	lds r30, addr_stackptr
+	lds r31, addr_stackptr+1
+	sts addr_buf1, r30
+	sts addr_buf1+1, r31
 
-	//Load current PID into R28
-	lds r28, addr_curPID
-
-	//Set the current PID to status 2 (runnable)
-	ldi R31, hi8(addr_procstatus)
-	ldi R30, lo8(addr_procstatus)
-	ldi r29, 0x00
-	sub r30, r28
-	sbc r31, r29
-	st Z, 2
-
-	//Buffer stack pointer to buf3
-	lds r28, addr_stackptr
-	lds r29, addr_stackptr+1
-	sts addr_buf3, r28
-	sts addr_buf3+1, r29
-
-	//Obtain new PID to R28
+	//Load next PID into R28
 	lds r28, addr_nextPID
 	inc r28
 	sts addr_nextPID, r28
 	dec r28
 
-	//Now move "stack pointer" to the next data field
-	lds r31, addr_procdata+1
+	//Set process status to runnable (0x02)
+	ldi r31, hi8(addr_procstatus)
+	ldi r30, lo8(addr_procstatus)
+	sub r30, r28
+	ldi r29, 0x00
+	sbc r30, r29
+	ldi r29, 0x02
+	st Z, r29
+
+	//Calculate start of process data for the new process
 	lds r30, addr_procdata
+	lds r31, addr_procdata+1
 	ldi r29, size_proc
 	mul r28, r29
 	sub r30, r0
 	sbc r31, r1
-
-	//Load the next stack start into X
-	lds r26, addr_nextStack
-	lds r27, addr_nextStack+1
-	//Push it
-	push r27
-	push r26
-	//Move it aside to later load it into stack
-	mov r28, r26
-	mov r29, r27
-
-	//Calculate next stack start and this end
-	sub r26, r22
-	sbc r27, r23
-	//Push it
-	push r27
-	push r26
-	//Store it as next stack start
-	sts addr_nextStack, r26
-	sts addr_nextStack+1, r27
-
-	//Store next entry to program counter to jump to this process at next context switch
-	ldi r26, 0x00
-	push r26
-	push r26
-	push r25
-	push r24
-
-	//Restore stack pointer
-	lds r30, addr_buf3
-	lds r31, addr_buf3+1
 	sts addr_stackptr, r30
 	sts addr_stackptr+1, r31
 
-	mov r24, r28
+	//Load next stack start into Z and store it
+	lds r30, addr_nextStack
+	lds r31, addr_nextStack+1
+	push r31
+	push r30
 
-	//Restore R31, R30, R29, R28
-	lds r31, addr_buf1+1
-	lds r30, addr_buf1
-	lds r29, addr_buf2+1
-	lds r28, addr_buf2
+	//Copy it to Y to calculate stack end and next stack
+	mov r28, r30
+	mov r29, r31
+	sub r28, r22
+	sbc r29, r23
+	push r29
+	push r28
+	sts addr_nextStack, r28
+	sts addr_nextStack+1, r29
+
+	//Store new stack pointer
+	push r31
+	push r30
+	
+	//Push jumpback
+	ldi r29, 0x00
+	push r29
+	push r29
+	push r25		//High
+	push r24		//Low
+
+	lds r24, addr_nextPID
+	dec r24
+
+	//Restore old register values
+	//Move	R30, R31	<-	buf4
+	//		R28, R29	<-	buf3
+	//		R0, R1		<-	buf2
+	//		SP			<-	buf1
+	lds r28, addr_buf1
+	lds r29, addr_buf1+1
+	sts addr_stackptr, r28
+	sts addr_stackptr+1, r29
+	lds r0, addr_buf2
+	lds r1, addr_buf2+1
+	lds r28, addr_buf3
+	lds r29, addr_buf3+1
+	lds r30, addr_buf4
+	lds r31, addr_buf4+1
 
 	ret

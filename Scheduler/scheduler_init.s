@@ -7,6 +7,7 @@
  */ 
  #include "scheduler_asm.h"
 
+ .global scheduler_isr
  .global scheduler_init
 
  scheduler_init:
@@ -98,6 +99,8 @@ moveloop:
 	//Store current PID = 0
 	ldi r26, 0x00
 	sts addr_curPID, r26
+	inc r26
+	sts addr_nextPID, r26
 
 	//Store max processes = R24
 	sts addr_maxProcesses, r24

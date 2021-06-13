@@ -12,6 +12,7 @@
 
 void proc1();
 
+
 ISR (TIMER1_OVF_vect)    // Timer1 ISR
 {
 	//Jump to scheduler switch command. You CAN do stuff before this, but clean the stack!!!
@@ -25,7 +26,7 @@ int main()
 {
 	cli();
 	scheduler_init(0x03, 0x50);
-	uint8_t pidProc1 = scheduler_new_process(&proc1, 0x50);
+	uint8_t pidProc1 = scheduler_new_process(proc1, 0x50);
 	TCCR1A = 0x00;				//No pin connections for this timer
 	TCCR1B = (1<<CS10);;		//No prescaler
 	TIMSK1 = (1 << TOV1) ;		//Timer1 on every 16-bit overflow
