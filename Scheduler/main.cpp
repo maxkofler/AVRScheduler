@@ -19,7 +19,6 @@ ISR (TIMER1_OVF_vect)    // Timer1 ISR
 	asm volatile("push r25");
 	asm volatile("ldi r25, 2");
 	asm volatile("jmp scheduler_switch");
-	
 }
 
 int main()
@@ -44,5 +43,8 @@ int main()
 }
 
 void proc1(){
-	DDRB = 0xDD;
+	int b = 0;
+	while(1){
+		b++;
+	}
 }

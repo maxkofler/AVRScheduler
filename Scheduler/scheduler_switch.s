@@ -42,23 +42,14 @@
 	//////////////////////////////////////
 pop_pc_gcc:
 	//First of all unwind the stack for 6 bytes (5 from GCC and 1 for old R25)
-	sts addr_buf1, r28
 
-	pop r28
-	sts addr_buf2, r28			//Old R25
-	pop r28
-	sts addr_buf2+1, r28		//Old R29
-
-	pop r28
-	sts addr_buf3, r28			//Old R28
-	pop r28
-	sts addr_buf3+1, r28		//SREG
-	sts addr_sreg, r28
-
-	pop r28
-	sts addr_buf4, r28			//Old R0
-	pop r28
-	sts addr_buf4+1, r28		//Old R1
+	pop r25
+	pop r29						//R29
+	pop r28						//R28
+	pop r0						//Sreg
+	sts addr_sreg, r0
+	pop r0
+	pop r1
 
 	//Now pop jumpback
 	pop r28
@@ -67,22 +58,6 @@ pop_pc_gcc:
 	sts addr_jumpback+1, r28
 	pop r28
 	sts addr_jumpback, r28
-
-	//And rewind the stack
-	lds r28, addr_buf4+1		//Old R1
-	push r28
-	lds r28, addr_buf4			//Old R0
-	push r28
-
-	lds r28, addr_buf3+1		//SREG
-	push r28
-	lds r28, addr_buf3			//Old R28
-	push r28
-
-	lds r28, addr_buf2+1		//Old R29
-	push r28
-	lds r28, addr_buf2			//Old R25
-	push r28
 
 	jmp make_context_switch
 
@@ -317,11 +292,9 @@ nextPID_loop_end:
 	sts addr_stackptr, r30
 	sts addr_stackptr+1, r31
 
-	lds r29, addr_switch_arg
-	cpi r29, 0x01
-	rjmp ret_interrupt
-	cpi r29, 0x02
-	rjmp push_pc_gcc
+	//Restore SREG
+	lds r29, addr_sreg
+	sts SREG+0x20, r29
 
 	lds r29, addr_jumpback 
 	push r29
@@ -339,30 +312,4 @@ nextPID_loop_end:
 	lds r29, addr_buf3+1
 	lds r30, addr_buf4
 	lds r31, addr_buf4+1
-	ret
-
-ret_interrupt:
-	lds r29, addr_jumpback 
-	push r29
-	lds r29, addr_jumpback+1
-	push r29
-	lds r29, addr_jumpback+2
-	push r29
-	//Restore old register values
-	//Move	R30, R31	<-	buf4
-	//		R28, R29	<-	buf3
-	//		R0, R1		<-	buf2
-	lds r0, addr_buf2
-	lds r1, addr_buf2+1
-	lds r28, addr_buf3
-	lds r29, addr_buf3+1
-	lds r30, addr_buf4
-	lds r31, addr_buf4+1
-	reti
-
-	//TODO
-	//Recall sreg
-	//Push stack (with gcc calls)
-
-push_pc_gcc:
 	reti
