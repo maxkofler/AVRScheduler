@@ -16,14 +16,13 @@
 
 	sts addr_buf1, r24
 
+	//Call SREG with an offset of 0x20(io memory area) and move it aside
+	lds r24, SREG
+	sts addr_sreg, r24
+
 	lds r24, addr_buf1
 
-	//Check if the call comes from C and has those stupid stack pushes
-	//and extract jumpback and sreg from it
-	cpi r25, 02
-	breq pop_pc_gcc
-
-	//If not, just pop the jumpback
+	//Pop the jumpback address
 	sts addr_buf3, r28
 	pop r28
 	sts addr_jumpback, r28
@@ -33,37 +32,6 @@
 	sts addr_jumpback+2, r28
 	lds r28, addr_buf3
 
-	//Call SREG with an offset of 0x20(io memory area) and move it aside
-	lds r28, SREG+0x20
-	sts addr_sreg, r28
-
-	jmp make_context_switch
-
-	//////////////////////////////////////
-pop_pc_gcc:
-	//First of all unwind the stack for 6 bytes (5 from GCC and 1 for old R25)
-
-	pop r25
-	pop r29						//R29
-	pop r28						//R28
-	pop r0						//Sreg
-	sts addr_sreg, r0
-	pop r0
-	pop r1
-
-	//Now pop jumpback
-	pop r28
-	sts addr_jumpback+2, r28
-	pop r28
-	sts addr_jumpback+1, r28
-	pop r28
-	sts addr_jumpback, r28
-
-	jmp make_context_switch
-
-	//////////////////////////////////////
-
- make_context_switch:
 	//Store the switch argument
 	sts addr_switch_arg, r25
 	pop r25
@@ -294,7 +262,7 @@ nextPID_loop_end:
 
 	//Restore SREG
 	lds r29, addr_sreg
-	sts SREG+0x20, r29
+	sts SREG, r29
 
 	lds r29, addr_jumpback 
 	push r29
